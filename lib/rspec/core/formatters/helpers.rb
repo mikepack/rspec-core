@@ -3,6 +3,8 @@ module RSpec
     module Formatters
 
       module Helpers
+        extend self
+
         SUB_SECOND_PRECISION = 5
         DEFAULT_PRECISION = 2
 
@@ -32,6 +34,24 @@ module RSpec
           "#{count} #{string}#{'s' unless count == 1}"
         end
 
+        def format_backtrace(backtrace, options = {})
+          return "" unless backtrace
+          return backtrace if options[:full_backtrace] == true
+
+          if at_exit_index = backtrace.index(RSpec::Core::Runner::AT_EXIT_HOOK_BACKTRACE_LINE)
+            backtrace = backtrace[0, at_exit_index]
+          end
+
+          cleansed = backtrace.map { |line| backtrace_line(line) }.compact
+          cleansed.empty? ? backtrace : cleansed
+        end
+
+        def backtrace_line(line)
+          return nil if RSpec.configuration.cleaned_from_backtrace?(line)
+          RSpec::Core::Metadata::relative_path(line)
+        rescue SecurityError
+          nil
+        end
       end
 
     end
